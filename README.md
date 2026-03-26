@@ -5,13 +5,13 @@
 # Pigeon
 ### The Native API Client for macOS. Fast, File-Based, and Fluid.
 
-[![Latest Release](https://img.shields.io/github/v/release/pokhrelashok/postget?label=download&color=blue)](https://github.com/pokhrelashok/postget/releases/latest)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/pokhrelashok/postget/deploy.yml?branch=main)](https://github.com/pokhrelashok/postget/actions)
+[![Latest Release](https://img.shields.io/github/v/release/pokhrelashok/pigeon?label=download&color=blue)](https://github.com/pokhrelashok/pigeon/releases/latest)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/pokhrelashok/pigeon/deploy.yml?branch=main)](https://github.com/pokhrelashok/pigeon/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Pigeon is a high-performance, native macOS API client designed for developers who value speed, privacy, and version control. Built with **Swift** and **SwiftUI**, it offers a buttery-smooth experience that Electron-based tools simply can't match.
 
-[**Download Latest DMG**](https://github.com/pokhrelashok/postget/releases/latest/download/Pigeon.dmg) • [Report a Bug](https://github.com/pokhrelashok/postget/issues)
+[**Download Latest DMG**](https://github.com/pokhrelashok/pigeon/releases/latest/download/Pigeon.dmg) • [Report a Bug](https://github.com/pokhrelashok/pigeon/issues)
 
 ---
 
@@ -58,7 +58,7 @@ Manage multiple projects with ease. The sidebar allows you to swipe between work
 
 ## 🚀 Getting Started
 
-1. **Download**: Grab the [latest `.dmg`](https://github.com/pokhrelashok/postget/releases/latest/download/Pigeon.dmg).
+1. **Download**: Grab the [latest `.dmg`](https://github.com/pokhrelashok/pigeon/releases/latest/download/Pigeon.dmg).
 2. **Install**: Drag Pigeon to your `/Applications` folder.
 3. **Open Workspace**: Point Pigeon to any folder on your machine containing `.bru` or `.yml` request files.
 
