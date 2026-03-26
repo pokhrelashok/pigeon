@@ -1,0 +1,86 @@
+<p align="center">
+  <img src="pigeon/Assets.xcassets/AppIcon.appiconset/AppIcon256.png" width="128" height="128" alt="Pigeon Logo">
+</p>
+
+# Pigeon
+### The Native API Client for macOS. Fast, File-Based, and Fluid.
+
+[![Latest Release](https://img.shields.io/github/v/release/pokhrelashok/postget?label=download&color=blue)](https://github.com/pokhrelashok/postget/releases/latest)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/pokhrelashok/postget/deploy.yml?branch=main)](https://github.com/pokhrelashok/postget/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Pigeon is a high-performance, native macOS API client designed for developers who value speed, privacy, and version control. Built with **Swift** and **SwiftUI**, it offers a buttery-smooth experience that Electron-based tools simply can't match.
+
+[**Download Latest DMG**](https://github.com/pokhrelashok/postget/releases/latest/download/Pigeon.dmg) • [Report a Bug](https://github.com/pokhrelashok/postget/issues)
+
+---
+
+## ✨ Why Pigeon?
+
+### 🚀 Native Performance
+No more waiting for Electron to boot. Pigeon is a pure Swift app that uses native macOS components. It launches instantly and handles thousands of requests with a tiny memory footprint.
+
+### 📄 Git-Friendly Data Model
+Your collections aren't trapped in a proprietary cloud or a massive, opaque JSON blob. Pigeon saves everything as plain text files in your own folders. Branch, merge, and pull-request your API collections just like your code.
+
+### 🔐 Privacy First
+Pigeon is local-only. There are no accounts to create, no tracking, and your sensitive API data never leaves your machine unless you choose to push it to your own Git repository.
+
+### 📂 Arc-Style Workspaces
+Manage multiple projects with ease. The sidebar allows you to swipe between workspaces seamlessly, keeping your context organized.
+
+---
+
+## 🆚 The Comparison
+
+| Feature | **Pigeon** | **Bruno** | **Postman** |
+| :--- | :---: | :---: | :---: |
+| **Engine** | Native (Swift) | Electron | Electron |
+| **Speed** | ⚡ Instant | 🟢 Good | 🟠 Heavy |
+| **Memory Usage** | 🍃 Ultra-low | 🟡 Moderate | 🔴 High |
+| **Data Storage** | Plain Files | Plain Files | Proprietary Cloud |
+| **Privacy** | 🔒 Local-only | 🔒 Local-only | 🔓 Cloud-first |
+| **UI/UX** | macOS Native | Cross-platform | Web-standard |
+| **Offline Support** | 100% | 100% | Limited |
+
+---
+
+## 🛠 Features
+
+- **Intuitive Editor**: Support for Params, Headers, Auth, and various Body types (JSON, XML, Multipart, etc.).
+- **Environment Management**: Switch between Dev, Staging, and Prod variables in a single click.
+- **Variable Resolution**: Dynamic variable injection using `{{variable}}` syntax.
+- **Response Viewer**: Pretty-printed JSON, raw view, and detailed header inspection.
+- **Quick Search**: Powerful search across requests and response bodies.
+- **Shortcuts**: Fully keyboard-driven workflow with native macOS shortcuts (`Cmd+Enter` to send).
+
+---
+
+## 🚀 Getting Started
+
+1. **Download**: Grab the [latest `.dmg`](https://github.com/pokhrelashok/postget/releases/latest/download/Pigeon.dmg).
+2. **Install**: Drag Pigeon to your `/Applications` folder.
+3. **Open Workspace**: Point Pigeon to any folder on your machine containing `.bru` or `.yml` request files.
+
+---
+
+## 🏗 Technical Overview
+
+Pigeon is built on a modular architecture designed for extensibility:
+
+- **Core**: Swift 6.0+, Observation Framework.
+- **Networking**: URLSession-based with custom `RequestBuilder`.
+- **UI**: SwiftUI with AppKit bridges for advanced macOS windowing.
+- **Persistence**: Atomic file-system writes with debounced session management.
+
+For a detailed architectural breakdown, see the [Technical Specification](docs/architecture.md).
+
+---
+
+## 📄 License
+Pigeon is released under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+---
+<p align="center">
+  Made with ❤️ for the macOS Developer Community.
+</p>

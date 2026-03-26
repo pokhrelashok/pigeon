@@ -1,0 +1,30 @@
+# Xcode
+#
+# gitignore contributors: switch to the latest source at https://github.com/github/gitignore/blob/main/Swift.gitignore
+
+## Build artifacts
+build/
+DerivedData/
+build_output/
+*.dmg
+*.pkg
+
+## Logs
+*.log
+build_error.log
+build_result.log
+build_debug*.log
+build_final.log
+
+## User-specific files
+*.xcuserdatad/
+*.xcworkspace/xcuserdata/
+
+## Diverse
+.DS_Store
+*.swp
+*~
+buildServer.json
+
+## AppKit / SwiftUI specific
+.apple_flashed
