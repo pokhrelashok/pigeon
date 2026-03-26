@@ -23,9 +23,13 @@ fi
 echo -e "Fetching latest tags from origin..."
 git fetch --tags
 
-# Get the latest version tag
-LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+# Get the latest version tag (ignoring 'latest' and other non-version tags)
+LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+if [ -z "$LATEST_TAG" ]; then
+    LATEST_TAG="v0.0.0"
+fi
 echo -e "Latest version tag: ${GREEN}${LATEST_TAG}${NC}"
+
 
 # Suggest next version (simple patch bump)
 VERSION_PART=$(echo $LATEST_TAG | sed 's/v//')
