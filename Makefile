@@ -21,7 +21,7 @@ XCODEBUILD_FLAGS = \
 	-derivedDataPath $(DERIVED_DATA) \
 	-skipPackagePluginValidation \
 	-skipMacroValidation \
-	ARCHS="arm64 x86_64" \
+	ARCHS="arm64" \
 	ONLY_ACTIVE_ARCH=NO \
 	CODE_SIGN_IDENTITY="-" \
 	CODE_SIGNING_REQUIRED=YES \

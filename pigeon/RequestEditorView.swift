@@ -64,11 +64,17 @@ struct RequestEditorView: View {
             .controlSize(.large)
             
             HStack(spacing: 0) {
-                VariableTextField(text: $draft.url, env: appState.activeEnvironment, placeholder: "https://api.example.com", onVariableUpdate: appState.updateEnvironmentVariable) {
+                VariableTextField(text: $draft.url, env: appState.activeEnvironment, placeholder: "https://api.example.com", onVariableUpdate: appState.updateEnvironmentVariable, onCommit: {
                     Task {
                         await appState.sendRequest()
                     }
-                }
+                }, onPaste: { text in
+                    if text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().hasPrefix("curl ") {
+                        draft.applyCurl(text)
+                        return true
+                    }
+                    return false
+                })
                 .padding(.vertical, 4)
                 .padding(.horizontal, 10)
                 
@@ -151,10 +157,11 @@ struct RequestEditorView: View {
                                 }) {
                                     Image(systemName: "trash")
                                         .foregroundColor(.secondary)
+                                        .frame(width: 30, height: 24)
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                Color.clear.frame(width: 20, height: 20)
+                                Color.clear.frame(width: 30, height: 24)
                             }
                         }
                         .padding(.vertical, 4)
@@ -322,8 +329,15 @@ struct RequestEditorView: View {
                                         draft.multipartForm.remove(at: index)
                                         draft.ensureEmptyRows()
                                     }
-                                }) { Image(systemName: "trash").foregroundColor(.secondary) }.buttonStyle(.plain)
-                            } else { Color.clear.frame(width: 20, height: 20) }
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 30, height: 24)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Color.clear.frame(width: 30, height: 24)
+                            }
                         }
                         .padding(.vertical, 4)
                         Divider().gridCellColumns(4)
@@ -360,8 +374,15 @@ struct RequestEditorView: View {
                                         draft.formUrlEncoded.remove(at: index)
                                         draft.ensureEmptyRows()
                                     }
-                                }) { Image(systemName: "trash").foregroundColor(.secondary) }.buttonStyle(.plain)
-                            } else { Color.clear.frame(width: 20, height: 20) }
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 30, height: 24)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Color.clear.frame(width: 30, height: 24)
+                            }
                         }
                         .padding(.vertical, 4)
                         Divider().gridCellColumns(4)
@@ -556,10 +577,11 @@ struct RequestEditorView: View {
                                 }) {
                                     Image(systemName: "trash")
                                         .foregroundColor(.secondary)
+                                        .frame(width: 30, height: 24)
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                Color.clear.frame(width: 20, height: 20)
+                                Color.clear.frame(width: 30, height: 24)
                             }
                         }
                         .padding(.vertical, 4)

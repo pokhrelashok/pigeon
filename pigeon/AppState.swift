@@ -202,6 +202,37 @@ class DraftRequest: Identifiable {
             path: initialRequest.path
         )
     }
+
+    func applyCurl(_ curl: String) {
+        guard let parsed = CurlParser.shared.parse(curl) else { return }
+        
+        self.method = parsed.method
+        self.url = parsed.url
+        
+        if let parsedAuth = parsed.auth {
+            self.auth = parsedAuth
+        }
+        
+        // Merge headers
+        if let parsedHeaders = parsed.headers {
+            for (key, value) in parsedHeaders {
+                if let index = self.headers.firstIndex(where: { $0.key.lowercased() == key.lowercased() }) {
+                    self.headers[index].value = value
+                    self.headers[index].isEnabled = true
+                } else {
+                    // Insert before the last empty row
+                    self.headers.insert(KeyValuePair(key: key, value: value), at: max(0, self.headers.count - 1))
+                }
+            }
+        }
+        
+        if let parsedBody = parsed.body {
+            self.body = parsedBody
+            self.bodyType = parsed.bodyType ?? "json"
+        }
+        
+        ensureEmptyRows()
+    }
 }
 
 enum AppTheme: String, CaseIterable, Identifiable {

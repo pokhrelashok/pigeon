@@ -8,6 +8,7 @@ struct VariableTextField: NSViewRepresentable {
     var font: NSFont = .systemFont(ofSize: 13)
     var onVariableUpdate: ((String, String) -> Void)? = nil
     var onCommit: (() -> Void)? = nil
+    var onPaste: ((String) -> Bool)? = nil
     
     func makeNSView(context: Context) -> VariableTextView {
         let textView = VariableTextView()
@@ -180,5 +181,13 @@ class VariableTextView: NSTextView {
             return
         }
         super.keyDown(with: event)
+    }
+
+    override func paste(_ sender: Any?) {
+        let pb = NSPasteboard.general
+        if let s = pb.string(forType: .string), let onPaste = (delegate as? VariableTextField.Coordinator)?.parent.onPaste, onPaste(s) {
+            return
+        }
+        super.paste(sender)
     }
 }

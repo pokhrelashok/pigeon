@@ -68,28 +68,31 @@ struct NewRequestModal: View {
     var manager: WorkspaceManager?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("New Request")
-                .font(.headline)
-            
-            ModalTextField(text: $appState.newName, placeholder: "e.g. Get Users") {
-                createAction()
-            }
-            
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape, modifiers: [])
-                Spacer()
-                Button("Create") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("New Request")
+                    .font(.headline)
+                
+                ModalTextField(text: $appState.newName, placeholder: "e.g. Get Users") {
                     createAction()
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(appState.newName.isEmpty)
-                .keyboardShortcut(.return, modifiers: [])
+                
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                    Spacer()
+                    Button("Create") {
+                        createAction()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(appState.newName.isEmpty)
+                    .keyboardShortcut(.return, modifiers: [])
+                }
             }
+            .padding(20)
         }
-        .padding(20)
         .frame(width: 350)
+        .frame(maxHeight: 400)
     }
     
     private func createAction() {
@@ -106,28 +109,31 @@ struct NewFolderModal: View {
     var manager: WorkspaceManager?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("New Folder")
-                .font(.headline)
-            
-            ModalTextField(text: $appState.newName, placeholder: "e.g. users") {
-                createAction()
-            }
-            
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape, modifiers: [])
-                Spacer()
-                Button("Create") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("New Folder")
+                    .font(.headline)
+                
+                ModalTextField(text: $appState.newName, placeholder: "e.g. users") {
                     createAction()
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(appState.newName.isEmpty)
-                .keyboardShortcut(.return, modifiers: [])
+                
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                    Spacer()
+                    Button("Create") {
+                        createAction()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(appState.newName.isEmpty)
+                    .keyboardShortcut(.return, modifiers: [])
+                }
             }
+            .padding(20)
         }
-        .padding(20)
         .frame(width: 350)
+        .frame(maxHeight: 400)
     }
     
     private func createAction() {
@@ -144,28 +150,31 @@ struct RenameModal: View {
     var manager: WorkspaceManager?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Rename")
-                .font(.headline)
-            
-            ModalTextField(text: $appState.newName, placeholder: "New name") {
-                renameAction()
-            }
-            
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape, modifiers: [])
-                Spacer()
-                Button("Rename") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Rename")
+                    .font(.headline)
+                
+                ModalTextField(text: $appState.newName, placeholder: "New name") {
                     renameAction()
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(appState.newName.isEmpty)
-                .keyboardShortcut(.return, modifiers: [])
+                
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                    Spacer()
+                    Button("Rename") {
+                        renameAction()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(appState.newName.isEmpty)
+                    .keyboardShortcut(.return, modifiers: [])
+                }
             }
+            .padding(20)
         }
-        .padding(20)
         .frame(width: 350)
+        .frame(maxHeight: 400)
     }
     
     private func renameAction() {
@@ -186,28 +195,31 @@ struct NewEnvironmentModal: View {
     var manager: WorkspaceManager?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("New Environment")
-                .font(.headline)
-            
-            ModalTextField(text: $appState.newName, placeholder: "e.g. Staging") {
-                createAction()
-            }
-            
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.escape, modifiers: [])
-                Spacer()
-                Button("Create") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("New Environment")
+                    .font(.headline)
+                
+                ModalTextField(text: $appState.newName, placeholder: "e.g. Staging") {
                     createAction()
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(appState.newName.isEmpty)
-                .keyboardShortcut(.return, modifiers: [])
+                
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                    Spacer()
+                    Button("Create") {
+                        createAction()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(appState.newName.isEmpty)
+                    .keyboardShortcut(.return, modifiers: [])
+                }
             }
+            .padding(20)
         }
-        .padding(20)
         .frame(width: 350)
+        .frame(maxHeight: 400)
     }
     
     private func createAction() {
