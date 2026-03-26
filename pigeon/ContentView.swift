@@ -10,9 +10,22 @@ import SwiftUI
 /// Debounces pane-resize writes to AppState.
 /// Has NO @Published properties, so mutating it never triggers SwiftUI re-renders —
 /// meaning zero layout passes happen during an active drag.
-private final class PaneSizeDebouncer: ObservableObject {
+/// Has @Published properties to trigger SwiftUI re-renders of the debounced components.
+final class PaneSizeDebouncer: ObservableObject {
+    @Published var sidebarWidth: Double = 0
+    @Published var responsePaneWidth: Double = 0
+    @Published var responsePaneHeight: Double = 0
+    
     private var widthTask: DispatchWorkItem?
+    private var sidebarTask: DispatchWorkItem?
     private var heightTask: DispatchWorkItem?
+
+    func debounceSidebar(delay: TimeInterval = 0.3, _ action: @escaping () -> Void) {
+        sidebarTask?.cancel()
+        let item = DispatchWorkItem(block: action)
+        sidebarTask = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
+    }
 
     func debounceWidth(delay: TimeInterval = 0.3, _ action: @escaping () -> Void) {
         widthTask?.cancel()
@@ -32,13 +45,25 @@ private final class PaneSizeDebouncer: ObservableObject {
 struct ContentView: View {
     @Bindable var appState: AppState
     @State private var keyboardMonitor: Any?
+    @State private var mouseUpMonitor: Any?
+    @State private var hasAppeared = false
+    /// Stable reference across renders. No @Published → mutating it never causes re-renders.
+    @StateObject private var paneDebouncer = PaneSizeDebouncer()
     
     var body: some View {
         NavigationSplitView {
             SidebarView(appState: appState)
                 .navigationSplitViewColumnWidth(min: 200, ideal: appState.sidebarWidth)
+                .background(GeometryReader { sidebarGeo in
+                    Color.clear
+                        .onChange(of: sidebarGeo.size.width) { _, newWidth in
+                            guard hasAppeared, newWidth > 0 else { return }
+                            let w = newWidth
+                            paneDebouncer.debounceSidebar { appState.sidebarWidth = w }
+                        }
+                })
         } detail: {
-            DetailContentView(appState: appState)
+            DetailContentView(appState: appState, hasAppeared: hasAppeared, paneDebouncer: paneDebouncer)
         }
         .frame(minWidth: 1000, minHeight: 650)
         .sheet(item: $appState.activeModal) { modal in
@@ -59,9 +84,15 @@ struct ContentView: View {
             // Guard prevents duplicate monitors if onAppear fires more than once
             guard keyboardMonitor == nil else { return }
             keyboardMonitor = setupKeyboardMonitors()
+            mouseUpMonitor = setupMouseMonitors()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                hasAppeared = true
+            }
         }
         .onDisappear {
             if let m = keyboardMonitor { NSEvent.removeMonitor(m); keyboardMonitor = nil }
+            if let m = mouseUpMonitor { NSEvent.removeMonitor(m); mouseUpMonitor = nil }
         }
     }
     
@@ -96,13 +127,21 @@ struct ContentView: View {
             return event
         }
     }
+    
+    private func setupMouseMonitors() -> Any {
+        NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [appState] event in
+            // When user releases the mouse (end of drag/resize), trigger any pending saves immediately
+            appState.debouncedSaveSession()
+            return event
+        }
+    }
 }
 
 /// A subview for the detail content to prevent re-renders when sidebar-related state changes
 struct DetailContentView: View {
     @Bindable var appState: AppState
-    /// Stable reference across renders. No @Published → mutating it never causes re-renders.
-    @StateObject private var paneDebouncer = PaneSizeDebouncer()
+    var hasAppeared: Bool // Pass this down to prevent overwrite
+    @ObservedObject var paneDebouncer: PaneSizeDebouncer
 
     var body: some View {
         VStack(spacing: 0) {
@@ -156,12 +195,11 @@ struct DetailContentView: View {
                             .layoutPriority(1)
                         
                         responsePane
-                            .frame(minHeight: 200)
-                            .frame(idealHeight: appState.responsePaneHeight)
+                            .frame(minHeight: 200, idealHeight: appState.responsePaneHeight)
                             .background(GeometryReader { paneGeo in
                                 Color.clear
                                     .onChange(of: paneGeo.size.height) { _, newHeight in
-                                        guard newHeight > 0 else { return }
+                                        guard hasAppeared, newHeight > 0 else { return }
                                         // Debounce: only write to @Observable appState after drag ends.
                                         // Writing every frame triggers re-renders that fight NSSplitView.
                                         let h = newHeight
@@ -172,12 +210,11 @@ struct DetailContentView: View {
                 } else if effectiveLayout == .left {
                     HSplitView {
                         responsePane
-                            .frame(minWidth: 300)
-                            .frame(idealWidth: appState.responsePaneWidth)
+                            .frame(minWidth: 300, idealWidth: appState.responsePaneWidth)
                             .background(GeometryReader { paneGeo in
                                 Color.clear
                                     .onChange(of: paneGeo.size.width) { _, newWidth in
-                                        guard newWidth > 0 else { return }
+                                        guard hasAppeared, newWidth > 0 else { return }
                                         let w = newWidth
                                         paneDebouncer.debounceWidth { appState.responsePaneWidth = w }
                                     }
@@ -194,12 +231,11 @@ struct DetailContentView: View {
                             .layoutPriority(1)
                         
                         responsePane
-                            .frame(minWidth: 300)
-                            .frame(idealWidth: appState.responsePaneWidth)
+                            .frame(minWidth: 300, idealWidth: appState.responsePaneWidth)
                             .background(GeometryReader { paneGeo in
                                 Color.clear
                                     .onChange(of: paneGeo.size.width) { _, newWidth in
-                                        guard newWidth > 0 else { return }
+                                        guard hasAppeared, newWidth > 0 else { return }
                                         let w = newWidth
                                         paneDebouncer.debounceWidth { appState.responsePaneWidth = w }
                                     }

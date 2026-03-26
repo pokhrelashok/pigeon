@@ -273,7 +273,9 @@ enum LayoutMode: String, CaseIterable, Codable, Identifiable {
 @Observable
 class AppState {
     var workspaceManagers: [WorkspaceManager] = []
-    var activeWorkspaceIndex: Int = 0
+    var activeWorkspaceIndex: Int = 0 {
+        didSet { if oldValue != activeWorkspaceIndex { debouncedSaveSession() } }
+    }
     
     var workspace: Workspace? {
         guard workspaceManagers.indices.contains(activeWorkspaceIndex) else { return nil }
@@ -326,8 +328,10 @@ class AppState {
     var activeEnvironmentName: String? {
         get { activeWorkspaceManager?.activeEnvironmentName }
         set { 
-            activeWorkspaceManager?.activeEnvironmentName = newValue 
-            saveSession()
+            if activeWorkspaceManager?.activeEnvironmentName != newValue {
+                activeWorkspaceManager?.activeEnvironmentName = newValue 
+                debouncedSaveSession()
+            }
         }
     }
     
@@ -557,12 +561,12 @@ class AppState {
         return items
     }
     
-    /// Debounced save — coalesces rapid pane-resize events; only writes to disk 0.4s after the last change.
-    private func debouncedSaveSession() {
+    /// Debounced save — coalesces rapid event; only writes to disk 0.7s after the last change.
+    func debouncedSaveSession() {
         paneSaveTask?.cancel()
         let task = DispatchWorkItem { [weak self] in self?.saveSession() }
         paneSaveTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: task)
     }
 
     func saveSession() {

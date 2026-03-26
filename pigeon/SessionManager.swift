@@ -76,11 +76,14 @@ class SessionManager {
     }
     
     func saveSession(state: SessionState) {
-        do {
-            let data = try JSONEncoder().encode(state)
-            try data.write(to: sessionURL, options: .atomic)
-        } catch {
-            print("Failed to save session: \(error)")
+        // Perform encoding and file I/O off the main thread to keep UI fluid
+        DispatchQueue.global(qos: .background).async { [sessionURL] in
+            do {
+                let data = try JSONEncoder().encode(state)
+                try data.write(to: sessionURL, options: .atomic)
+            } catch {
+                print("Failed to save session: \(error)")
+            }
         }
     }
     
