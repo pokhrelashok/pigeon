@@ -25,13 +25,14 @@ XCODEBUILD_FLAGS = \
 	CODE_SIGNING_REQUIRED=NO \
 	CODE_SIGNING_ALLOWED=NO
 
-.PHONY: all build install clean help dmg
+.PHONY: all build install clean help dmg release
 
 all: build install
 
 help:
 	@echo "Usage:"
 	@echo "  make dmg      - Build and create DMG"
+	@echo "  make release  - Tag and push a new release"
 	@echo "  make clean    - Remove build artifacts"
 
 build:
@@ -57,6 +58,9 @@ dmg: build
 	ln -s /Applications $(DERIVED_DATA)/dmg/Applications
 	hdiutil create -volname $(PRODUCT_NAME) -srcfolder $(DERIVED_DATA)/dmg -ov -format UDZO $(DMG_NAME)
 	rm -rf $(DERIVED_DATA)/dmg
+
+release:
+	./release.sh
 
 clean:
 	@echo "Cleaning build artifacts..."

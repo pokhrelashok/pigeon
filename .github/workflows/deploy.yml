@@ -7,6 +7,17 @@ on:
       - 'v*'
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a GitHub Release?'
+        required: true
+        type: boolean
+        default: false
+      tag_name:
+        description: 'Tag name for the release (if create_release is true)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -29,25 +40,17 @@ jobs:
           name: Pigeon-dmg
           path: Pigeon.dmg
 
-      - name: Create Latest Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Create Release
+        if: |
+          startsWith(github.ref, 'refs/tags/v') || 
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest Build
-          body: "This is the latest build from the main branch. Use this for the absolute most recent features and fixes."
-          files: Pigeon.dmg
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Versioned Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
           files: Pigeon.dmg
           draft: false
           prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

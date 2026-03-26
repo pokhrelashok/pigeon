@@ -11,7 +11,7 @@
 
 Pigeon is a high-performance, native macOS API client designed for developers who value speed, privacy, and version control. Built with **Swift** and **SwiftUI**, it offers a buttery-smooth experience that Electron-based tools simply can't match.
 
-[**Download Latest DMG**](https://github.com/pokhrelashok/pigeon/releases/latest/download/Pigeon.dmg) • [Report a Bug](https://github.com/pokhrelashok/pigeon/issues)
+[**Download Latest DMG**](https://github.com/pokhrelashok/pigeon/releases/latest/download/Pigeon.dmg) • [Report a Bug](https://github.com/pokhrelashok/pigeon/issues/new/choose) • [Contributing](CONTRIBUTING.md)
 
 ---
 
@@ -74,6 +74,16 @@ Pigeon is built on a modular architecture designed for extensibility:
 - **Persistence**: Atomic file-system writes with debounced session management.
 
 For a detailed architectural breakdown, see the [Technical Specification](docs/architecture.md).
+
+---
+
+## 🤝 Contributing
+
+We love contributions! Whether you're reporting a bug, suggesting a feature, or submitting a pull request, please check out our [Contributing Guidelines](CONTRIBUTING.md).
+
+### 🐛 Reporting Issues
+If you find a bug or have a suggestion, please [open an issue](https://github.com/pokhrelashok/pigeon/issues/new/choose) using one of our templates.
+
 
 ---
 
