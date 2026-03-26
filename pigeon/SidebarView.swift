@@ -739,7 +739,14 @@ struct WorkspaceCarouselView: View {
             accumulatedDelta += delta
             let atStart = activeIndex == 0 && accumulatedDelta < 0
             let atEnd   = activeIndex == count - 1 && accumulatedDelta > 0
-            dragOffset = (atStart || atEnd) ? accumulatedDelta / 3.5 : accumulatedDelta
+            
+            if atStart || atEnd {
+                // Apply strong rubberband resistance to prevent pulling the spring too much
+                let friction: CGFloat = 20.0
+                dragOffset = (accumulatedDelta > 0 ? 1 : -1) * friction * log(1 + abs(accumulatedDelta) / friction)
+            } else {
+                dragOffset = accumulatedDelta
+            }
 
         case .ended, .cancelled:
             guard isDragging else { return }

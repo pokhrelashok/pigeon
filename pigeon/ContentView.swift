@@ -220,31 +220,31 @@ struct DetailContentView: View {
     
     @ViewBuilder
     private var responsePane: some View {
-        if let response = appState.response {
-            ResponseView(response: response, appState: appState)
-                .frame(minWidth: 300, minHeight: 200)
-                .frame(idealWidth: appState.responsePaneWidth)
-        } else {
-            VStack(spacing: 0) {
-                // Header with Layout Picker even when no response
-                HStack {
-                    Spacer()
-                    LayoutPickerView(appState: appState)
-                        .padding(.trailing, 8)
+        ZStack {
+            if let response = appState.response {
+                ResponseView(response: response, appState: appState)
+            } else {
+                VStack(spacing: 0) {
+                    // Header with Layout Picker even when no response
+                    HStack {
+                        Spacer()
+                        LayoutPickerView(appState: appState)
+                            .padding(.trailing, 8)
+                    }
+                    .frame(height: 34)
+                    .background(Color(NSColor.windowBackgroundColor))
+                    
+                    Divider()
+                    
+                    VStack {
+                        ContentUnavailableView("No Response", systemImage: "bolt.horizontal", description: Text("Send a request to see the response here."))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.1))
                 }
-                .frame(height: 34)
-                .background(Color(NSColor.windowBackgroundColor))
-                
-                Divider()
-                
-                VStack {
-                    ContentUnavailableView("No Response", systemImage: "bolt.horizontal", description: Text("Send a request to see the response here."))
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.1))
             }
-            .frame(minWidth: 300, maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
         }
+        .frame(minWidth: 300, maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
     }
     
     enum PaneLayout {
