@@ -64,6 +64,26 @@ Manage multiple projects with ease. The sidebar allows you to swipe between work
 
 ---
 
+## 🛠 Troubleshooting (Security Warnings)
+
+Since Pigeon is currently unsigned, macOS will show a warning when you first open it ("Pigeon can't be opened because Apple cannot check it for malicious software").
+
+**To open Pigeon:**
+1. **Right-click** (or Control-click) the Pigeon app icon and select **Open**.
+2. A dialog will appear; click **Open** again.
+3. This is only required once. Alternatively, go to **System Settings > Privacy & Security** and click **Open Anyway**.
+
+**If the "Move to Trash" warning persists:**
+Modern macOS (Sequoia+) is very strict with unsigned apps. If the above doesn't work, you can clear the quarantine attribute manually via Terminal:
+```bash
+xattr -cr /Applications/Pigeon.app
+```
+Then try opening it again normally.
+
+
+
+---
+
 ## 🏗 Technical Overview
 
 Pigeon is built on a modular architecture designed for extensibility:

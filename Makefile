@@ -21,9 +21,11 @@ XCODEBUILD_FLAGS = \
 	-derivedDataPath $(DERIVED_DATA) \
 	-skipPackagePluginValidation \
 	-skipMacroValidation \
-	CODE_SIGN_IDENTITY="" \
-	CODE_SIGNING_REQUIRED=NO \
-	CODE_SIGNING_ALLOWED=NO
+	ARCHS="arm64 x86_64" \
+	ONLY_ACTIVE_ARCH=NO \
+	CODE_SIGN_IDENTITY="-" \
+	CODE_SIGNING_REQUIRED=YES \
+	CODE_SIGNING_ALLOWED=YES
 
 .PHONY: all build install clean help dmg release
 
@@ -54,7 +56,7 @@ install: build
 dmg: build
 	@echo "Creating DMG..."
 	mkdir -p $(DERIVED_DATA)/dmg
-	cp -R "$(BUILD_PATH)" $(DERIVED_DATA)/dmg/
+	ditto "$(BUILD_PATH)" $(DERIVED_DATA)/dmg/$(APP_NAME)
 	ln -s /Applications $(DERIVED_DATA)/dmg/Applications
 	hdiutil create -volname $(PRODUCT_NAME) -srcfolder $(DERIVED_DATA)/dmg -ov -format UDZO $(DMG_NAME)
 	rm -rf $(DERIVED_DATA)/dmg
