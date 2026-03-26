@@ -39,7 +39,7 @@ struct ResponseView: View {
                         Text("Headers").tag(1)
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: isHTML ? 220 : 150)
+                    .frame(width: isHTML ? 210 : 140)
                     
                     Spacer()
                     
@@ -73,6 +73,11 @@ struct ResponseView: View {
             .background(Color(NSColor.controlBackgroundColor).opacity(0.1))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onChange(of: response.body) {
+            if selectedTab == 2 && !isHTML {
+                selectedTab = 0
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .triggerResponseSearch)) { _ in
             withAnimation {
                 isSearchVisible = true
@@ -154,7 +159,13 @@ struct ResponseView: View {
     }
     
     private var isHTML: Bool {
-        response.contentType?.lowercased().contains("text/html") ?? false
+        if let contentType = response.contentType?.lowercased(),
+           (contentType.contains("text/html") || contentType.contains("application/xhtml+xml")) {
+            return true
+        }
+        
+        let body = response.body.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return body.hasPrefix("<!doctype html") || body.hasPrefix("<html") || body.contains("<body")
     }
     
     private var previewTab: some View {
@@ -204,24 +215,24 @@ struct ResponseView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 12) {
+                    Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
                         ForEach(response.headers.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                             GridRow {
                                 Text(key)
-                                    .font(.system(.body, design: .monospaced))
-                                    .bold()
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.secondary)
                                     .gridColumnAlignment(.leading)
                                 
                                 Text(value)
-                                    .font(.system(.body, design: .monospaced))
+                                    .font(.system(size: 12, design: .monospaced))
                                     .multilineTextAlignment(.leading)
                             }
                             Divider()
                                 .gridCellColumns(2)
+                                .opacity(0.5)
                         }
                     }
-                    .padding()
+                    .padding(16)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

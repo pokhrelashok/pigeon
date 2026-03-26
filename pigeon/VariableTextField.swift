@@ -12,6 +12,15 @@ struct VariableTextField: NSViewRepresentable {
     
     func makeNSView(context: Context) -> NSTextField {
         let textField = CustomTextField()
+        
+        let cell = CenteredTextFieldCell(textCell: "")
+        cell.isEditable = true
+        cell.isScrollable = true
+        cell.usesSingleLineMode = true
+        cell.lineBreakMode = .byClipping
+        cell.wraps = false
+        textField.cell = cell
+        
         textField.delegate = context.coordinator
         textField.font = font
         textField.placeholderString = placeholder
@@ -19,18 +28,9 @@ struct VariableTextField: NSViewRepresentable {
         textField.drawsBackground = false
         textField.backgroundColor = .clear
         textField.focusRingType = .none
-        textField.cell?.lineBreakMode = .byClipping
-        textField.cell?.usesSingleLineMode = true
-        textField.cell?.wraps = false
-        textField.cell?.isScrollable = true
         
         textField.onCommit = onCommit
         textField.onPaste = onPaste
-        
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            textField.heightAnchor.constraint(equalToConstant: 24)
-        ])
         
         return textField
     }
@@ -38,14 +38,13 @@ struct VariableTextField: NSViewRepresentable {
     func updateNSView(_ nsView: NSTextField, context: Context) {
         if nsView.stringValue != text {
             nsView.stringValue = text
+            // Apply highlighting when updated from SwiftUI
+            context.coordinator.applyHighlighting(to: nsView)
         }
         
         nsView.placeholderString = placeholder
         context.coordinator.env = env
         context.coordinator.parent = self
-        
-        // Apply highlighting to the attributed string
-        context.coordinator.applyHighlighting(to: nsView)
     }
     
     func makeCoordinator() -> Coordinator {
@@ -83,11 +82,14 @@ struct VariableTextField: NSViewRepresentable {
             
             VariableHighlighter.shared.highlight(in: attributed, font: baseFont)
             
-            textField.attributedStringValue = attributed
-            
-            // Restore selection if it was active
-            if let range = selectedRange, let editor = textField.currentEditor() {
-                editor.selectedRange = range
+            // Only update if the attributed string is different to preserve undo stack and cursor
+            if textField.attributedStringValue != attributed {
+                textField.attributedStringValue = attributed
+                
+                // Restore selection IMMEDIATELY after setting value
+                if let range = selectedRange, let editor = textField.currentEditor() {
+                    editor.selectedRange = range
+                }
             }
         }
         
@@ -108,6 +110,10 @@ class CustomTextField: NSTextField {
         return super.performKeyEquivalent(with: event)
     }
     
+    override var undoManager: UndoManager? {
+        return super.undoManager ?? NSApplication.shared.keyWindow?.undoManager
+    }
+    
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
@@ -115,5 +121,25 @@ class CustomTextField: NSTextField {
             self.cell?.usesSingleLineMode = true
         }
         return result
+    }
+}
+
+class CenteredTextFieldCell: NSTextFieldCell {
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        let rect = super.drawingRect(forBounds: rect)
+        let size = self.cellSize(forBounds: rect)
+        let delta = rect.height - size.height
+        if delta > 0 {
+            return NSRect(x: rect.origin.x, y: rect.origin.y + delta / 2, width: rect.width, height: size.height)
+        }
+        return rect
+    }
+    
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+    
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
     }
 }
