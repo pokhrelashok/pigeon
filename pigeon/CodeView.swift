@@ -69,12 +69,6 @@ struct CodeView: NSViewRepresentable {
         scrollView.rulersVisible = true
         
         let lineNumberView = LineNumberRulerView(textView: textView)
-        lineNumberView.onToggleFold = { line in
-            context.coordinator.toggleFold(at: line, in: textView)
-        }
-        lineNumberView.getFoldState = { line in
-            context.coordinator.foldState(at: line)
-        }
         scrollView.verticalRulerView = lineNumberView
         
         scrollView.documentView = textView
@@ -95,101 +89,13 @@ struct CodeView: NSViewRepresentable {
                 ruler.needsDisplay = true
             }
             
+            
             // Handle Search
             performSearch(in: textView)
-            
-            // Detect foldable ranges if text changed
-            context.coordinator.detectFoldableRanges(in: textView.string)
         }
     }
     
     class Coordinator: NSObject {
-        // --- Folding Support ---
-        var foldableRanges: [Int: NSRange] = [:] // startLine: range
-        var foldedRanges: Set<Int> = [] // set of startLines
-        
-        func detectFoldableRanges(in text: String) {
-            foldableRanges.removeAll()
-            var stack: [(char: Character, index: Int)] = []
-            
-            var lineStartIndices: [Int] = [0]
-            for (index, char) in text.enumerated() {
-                if char == "\n" {
-                    lineStartIndices.append(index + 1)
-                }
-            }
-            
-            for (index, char) in text.enumerated() {
-                if char == "{" || char == "[" {
-                    stack.append((char, index))
-                } else if char == "}" || char == "]" {
-                    if let last = stack.popLast() {
-                        let matching: Character = char == "}" ? "{" : "["
-                        if last.char == matching {
-                            let startLine = lineStartIndices.lastIndex(where: { $0 <= last.index }) ?? 0
-                            let endLine = lineStartIndices.lastIndex(where: { $0 <= index }) ?? 0
-                            
-                            if startLine != endLine {
-                                let range = NSRange(location: last.index, length: index - last.index + 1)
-                                foldableRanges[startLine + 1] = range
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        func toggleFold(at line: Int, in textView: NSTextView) {
-            if foldedRanges.contains(line) {
-                foldedRanges.remove(line)
-            } else {
-                foldedRanges.insert(line)
-            }
-            applyFolding(to: textView)
-        }
-        
-        func foldState(at line: Int) -> CodeView.LineFoldState {
-            if !foldableRanges.keys.contains(line) { return .none }
-            return foldedRanges.contains(line) ? .folded : .expanded
-        }
-        
-        func applyFolding(to textView: NSTextView) {
-            guard let layoutManager = textView.layoutManager, let textStorage = textView.textStorage else { return }
-            let fullRange = NSRange(location: 0, length: (textView.string as NSString).length)
-            
-            layoutManager.enumerateLineFragments(forGlyphRange: fullRange) { _, _, _, glyphRange, _ in
-                for i in glyphRange.location..<NSMaxRange(glyphRange) {
-                    layoutManager.setNotShownAttribute(false, forGlyphAt: i)
-                }
-            }
-            
-            // Clear previous folding links
-            textStorage.beginEditing()
-            textStorage.removeAttribute(.link, range: fullRange)
-            
-            for line in foldedRanges.sorted() {
-                if let range = foldableRanges[line] {
-                    // Hide everything between delimiters
-                    let innerRange = NSRange(location: range.location + 1, length: range.length - 2)
-                    for i in 0..<innerRange.length {
-                        let charIndex = innerRange.location + i
-                        let glyphIndex = layoutManager.glyphIndexForCharacter(at: charIndex)
-                        layoutManager.setNotShownAttribute(true, forGlyphAt: glyphIndex)
-                    }
-                    
-                    // Add a clickable link to the opening brace to show it can be expanded
-                    textStorage.addAttribute(.link, value: "fold://expand?line=\(line)", range: NSRange(location: range.location, length: 1))
-                }
-            }
-            textStorage.endEditing()
-            layoutManager.invalidateLayout(forCharacterRange: fullRange, actualCharacterRange: nil)
-            textView.needsDisplay = true
-        }
-        // --- End Folding Support ---
-    }
-    
-    enum LineFoldState {
-        case none, expanded, folded
     }
     
     private func performSearch(in textView: NSTextView) {
@@ -249,9 +155,6 @@ struct CodeView: NSViewRepresentable {
 
 class LineNumberRulerView: NSRulerView {
     var textView: NSTextView?
-    var onToggleFold: ((Int) -> Void)?
-    var getFoldState: ((Int) -> CodeView.LineFoldState)?
-    var getActualLine: ((Int) -> Int)?
     
     init(textView: NSTextView) {
         super.init(scrollView: textView.enclosingScrollView, orientation: .verticalRuler)
@@ -289,52 +192,11 @@ class LineNumberRulerView: NSRulerView {
             let rect = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: index), effectiveRange: nil)
             
             let y = rect.origin.y - visibleRect.origin.y + textView.textContainerInset.height
-            let actualLineNumber = self.getActualLine?(visibleLineNumber) ?? visibleLineNumber
+            let actualLineNumber = visibleLineNumber
             let label = "\(actualLineNumber)" as NSString
             let labelSize = label.size(withAttributes: attributes)
             
-            label.draw(at: NSPoint(x: self.ruleThickness - labelSize.width - 18, y: y + (rect.height - labelSize.height) / 2), withAttributes: attributes)
-            
-            // Draw Chevron
-            if let state = self.getFoldState?(actualLineNumber), state != .none {
-                let chevron = state == .folded ? "›" : "⌄"
-                let chevronAttrs: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: 14, weight: .bold),
-                    .foregroundColor: NSColor.secondaryLabelColor
-                ]
-                let chevronSize = (chevron as NSString).size(withAttributes: chevronAttrs)
-                (chevron as NSString).draw(at: NSPoint(x: self.ruleThickness - 16, y: y + (rect.height - chevronSize.height) / 2), withAttributes: chevronAttrs)
-            }
-            
-            visibleLineNumber += 1
-        }
-    }
-    
-    override func mouseDown(with event: NSEvent) {
-        let point = self.convert(event.locationInWindow, from: nil)
-        guard let textView = textView, let layoutManager = textView.layoutManager, let textContainer = textView.textContainer else { return }
-        
-        let visibleRect = self.scrollView?.contentView.bounds ?? .zero
-        let charRange = layoutManager.glyphRange(forBoundingRect: visibleRect, in: textContainer)
-        let textString = textView.string as NSString
-        
-        var visibleLineNumber = 1
-        textString.enumerateSubstrings(in: NSRange(location: 0, length: charRange.location), options: [.byLines, .substringNotRequired]) { _, _, _, _ in
-            visibleLineNumber += 1
-        }
-        
-        textString.enumerateSubstrings(in: charRange, options: .byLines) { _, lineRange, _, _ in
-            let index = lineRange.location
-            let rect = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: index), effectiveRange: nil)
-            let y = rect.origin.y - visibleRect.origin.y + textView.textContainerInset.height
-            
-            let targetRect = NSRect(x: self.ruleThickness - 25, y: y, width: 25, height: rect.height)
-            if targetRect.contains(point) {
-                let actualLineNumber = self.getActualLine?(visibleLineNumber) ?? visibleLineNumber
-                self.onToggleFold?(actualLineNumber)
-                self.needsDisplay = true
-                return
-            }
+            label.draw(at: NSPoint(x: self.ruleThickness - labelSize.width - 12, y: y + (rect.height - labelSize.height) / 2), withAttributes: attributes)
             
             visibleLineNumber += 1
         }
