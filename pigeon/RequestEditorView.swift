@@ -144,9 +144,11 @@ struct RequestEditorView: View {
                                 .controlSize(.small)
                             
                             VariableTextField(text: $header.key, env: appState.activeEnvironment, placeholder: "Name", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: header.key) { draft.ensureEmptyRows() }
                             
                             VariableTextField(text: $header.value, env: appState.activeEnvironment, placeholder: "Value", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: header.value) { draft.ensureEmptyRows() }
                             
                             if header.id != draft.headers.last?.id || !header.key.isEmpty || !header.value.isEmpty {
@@ -290,6 +292,7 @@ struct RequestEditorView: View {
                         GridRow {
                             Toggle("", isOn: $param.isEnabled).labelsHidden().controlSize(.small)
                             VariableTextField(text: $param.key, env: appState.activeEnvironment, placeholder: "Name", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: param.key) { draft.ensureEmptyRows() }
                             
                             HStack(spacing: 8) {
@@ -319,6 +322,7 @@ struct RequestEditorView: View {
                                     }
                                 } else {
                                     VariableTextField(text: $param.value, env: appState.activeEnvironment, placeholder: "Value", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                        .frame(maxWidth: .infinity)
                                         .onChange(of: param.value) { draft.ensureEmptyRows() }
                                 }
                             }
@@ -364,8 +368,10 @@ struct RequestEditorView: View {
                         GridRow {
                             Toggle("", isOn: $param.isEnabled).labelsHidden().controlSize(.small)
                             VariableTextField(text: $param.key, env: appState.activeEnvironment, placeholder: "Name", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: param.key) { draft.ensureEmptyRows() }
                             VariableTextField(text: $param.value, env: appState.activeEnvironment, placeholder: "Value", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: param.value) { draft.ensureEmptyRows() }
                             
                             if param.id != draft.formUrlEncoded.last?.id || !param.key.isEmpty || !param.value.isEmpty {
@@ -564,9 +570,11 @@ struct RequestEditorView: View {
                                 .controlSize(.small)
                             
                             VariableTextField(text: $param.key, env: appState.activeEnvironment, placeholder: "Name", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: param.key) { draft.ensureEmptyRows() }
                             
                             VariableTextField(text: $param.value, env: appState.activeEnvironment, placeholder: "Value", font: .monospacedSystemFont(ofSize: 12, weight: .regular), onVariableUpdate: appState.updateEnvironmentVariable)
+                                .frame(maxWidth: .infinity)
                                 .onChange(of: param.value) { draft.ensureEmptyRows() }
                             
                             if param.id != draft.query.last?.id || !param.key.isEmpty || !param.value.isEmpty {

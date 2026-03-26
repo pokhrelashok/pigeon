@@ -243,6 +243,8 @@ struct EnvironmentVariable: Identifiable, Codable, Equatable, Hashable {
     }
 }
 
+typealias PigeonEnvironment = Environment
+
 struct Environment: Codable, Identifiable, Equatable {
     var id: UUID = UUID()
     var name: String

@@ -305,4 +305,111 @@ final class PigeonParserTests: XCTestCase {
         XCTAssertEqual(digestRequest.authUsername, "digestUser")
         XCTAssertEqual(digestRequest.authPassword, "digestPassword")
     }
+    
+    // MARK: - Curl Parser Tests
+    
+    func testCurlParserSimpleGet() throws {
+        let curl = "curl https://api.example.com/users"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse simple GET")
+            return
+        }
+        
+        XCTAssertEqual(request.method, "GET")
+        XCTAssertEqual(request.url, "https://api.example.com/users")
+    }
+    
+    func testCurlParserGetWithHeaders() throws {
+        let curl = "curl https://api.example.com -H 'Accept: application/json' -H 'X-Header: value'"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse GET with headers")
+            return
+        }
+        
+        XCTAssertEqual(request.headers?["Accept"], "application/json")
+        XCTAssertEqual(request.headers?["X-Header"], "value")
+    }
+    
+    func testCurlParserPostWithData() throws {
+        let curl = "curl -X POST https://api.example.com/login -d '{\"user\":\"test\"}'"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse POST with data")
+            return
+        }
+        
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.body, "{\"user\":\"test\"}")
+        XCTAssertEqual(request.bodyType, "json")
+    }
+    
+    func testCurlParserBearerAuthExtraction() throws {
+        let curl = "curl https://api.example.com -H 'Authorization: Bearer my-token-123'"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse Bearer auth")
+            return
+        }
+        
+        // Should be extracted to auth property
+        XCTAssertNotNil(request.auth)
+        XCTAssertEqual(request.auth?.type, .bearer)
+        XCTAssertEqual(request.auth?.token, "my-token-123")
+        
+        // Should be removed from headers
+        XCTAssertNil(request.headers?["Authorization"])
+        XCTAssertNil(request.headers?["authorization"])
+    }
+    
+    func testCurlParserBasicAuthExtraction() throws {
+        // user:pass -> dXNlcjpwYXNz
+        let curl = "curl https://api.example.com -H 'Authorization: Basic dXNlcjpwYXNz'"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse Basic auth")
+            return
+        }
+        
+        XCTAssertNotNil(request.auth)
+        XCTAssertEqual(request.auth?.type, .basic)
+        XCTAssertEqual(request.auth?.username, "user")
+        XCTAssertEqual(request.auth?.password, "pass")
+        
+        XCTAssertNil(request.headers?["Authorization"])
+    }
+    
+    func testCurlParserCurlyQuotes() throws {
+        let curl = "curl ‘https://api.example.com’ -H “Authorization: Bearer my-token-123”"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse curl with curly quotes")
+            return
+        }
+        
+        XCTAssertEqual(request.url, "https://api.example.com")
+        XCTAssertEqual(request.auth?.token, "my-token-123")
+    }
+    
+    func testCurlParserLineContinuations() throws {
+        let curl = """
+curl 'https://api.example.com' \\
+  -H 'Accept: application/json' \\
+  -d '{"key": "value"}'
+"""
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse curl with line continuations")
+            return
+        }
+        
+        XCTAssertEqual(request.url, "https://api.example.com")
+        XCTAssertEqual(request.headers?["Accept"], "application/json")
+        XCTAssertEqual(request.body, "{\"key\": \"value\"}")
+    }
+    
+    func testCurlParserCookies() throws {
+        let curl = "curl https://api.example.com -b 'session=123' -b 'prefs=dark'"
+        guard let request = CurlParser.shared.parse(curl) else {
+            XCTFail("Failed to parse curl with cookies")
+            return
+        }
+        
+        XCTAssertTrue(request.headers?["Cookie"]?.contains("session=123") ?? false)
+        XCTAssertTrue(request.headers?["Cookie"]?.contains("prefs=dark") ?? false)
+    }
 }

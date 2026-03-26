@@ -33,10 +33,13 @@ struct ResponseView: View {
                 HStack {
                     Picker("", selection: $selectedTab) {
                         Text("Body").tag(0)
+                        if isHTML {
+                            Text("Preview").tag(2)
+                        }
                         Text("Headers").tag(1)
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: 150)
+                    .frame(width: isHTML ? 220 : 150)
                     
                     Spacer()
                     
@@ -61,6 +64,8 @@ struct ResponseView: View {
                         }
                     }
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSearchVisible)
+                } else if selectedTab == 2 {
+                    previewTab
                 } else {
                     headersTab
                 }
@@ -146,6 +151,23 @@ struct ResponseView: View {
         case 500...599: return .red
         default: return .secondary
         }
+    }
+    
+    private var isHTML: Bool {
+        response.contentType?.lowercased().contains("text/html") ?? false
+    }
+    
+    private var previewTab: some View {
+        WebView(html: response.body)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
+            )
     }
     
     private var bodyTab: some View {
