@@ -10,37 +10,60 @@ struct VariableTextField: NSViewRepresentable {
     var onCommit: (() -> Void)? = nil
     var onPaste: ((String) -> Bool)? = nil
     
-    func makeNSView(context: Context) -> NSTextField {
-        let textField = CustomTextField()
+    func makeNSView(context: Context) -> VariableTextView {
+        let textView = VariableTextView()
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.isVerticallyResizable = false
+        textView.isHorizontallyResizable = true
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        textView.delegate = context.coordinator
+        textView.font = font
+        textView.enforceSingleLine = true
+        textView.onCommit = onCommit
         
-        let cell = CenteredTextFieldCell(textCell: "")
-        cell.isEditable = true
-        cell.isScrollable = true
-        cell.usesSingleLineMode = true
-        cell.lineBreakMode = .byClipping
-        cell.wraps = false
-        textField.cell = cell
+        // Remove link styling so our green color stays
+        textView.linkTextAttributes = [:]
         
-        textField.delegate = context.coordinator
-        textField.font = font
-        textField.placeholderString = placeholder
-        textField.isBordered = false
-        textField.drawsBackground = false
-        textField.backgroundColor = .clear
-        textField.focusRingType = .none
+        // Undo support
+        textView.allowsUndo = true
         
-        textField.onCommit = onCommit
-        textField.onPaste = onPaste
+        // Layout settings for single line
+        textView.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = false
+        textView.textContainer?.maximumNumberOfLines = 1
+        textView.textContainer?.lineBreakMode = .byTruncatingTail
+        // Perfectly center vertically in a 24pt high row: System font 13 has a line height of ~16. (24 - 16) / 2 = 4
+        textView.textContainerInset = NSSize(width: 4, height: 4)
         
-        return textField
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isContinuousSpellCheckingEnabled = false
+        
+        // Set fixed height
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textView.heightAnchor.constraint(equalToConstant: 24)
+        ])
+        
+        return textView
     }
     
-    func updateNSView(_ nsView: NSTextField, context: Context) {
-        if nsView.stringValue != text {
-            nsView.stringValue = text
-            // Apply highlighting when updated from SwiftUI
-            context.coordinator.applyHighlighting(to: nsView)
+    func updateNSView(_ nsView: VariableTextView, context: Context) {
+        if nsView.string != text {
+            if let textStorage = nsView.textStorage {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: 0, length: textStorage.length), with: text)
+                textStorage.endEditing()
+            }
         }
+        
+        // Always apply highlighting to reflect any changes in environment variables
+        context.coordinator.applyHighlighting(to: nsView)
         
         nsView.placeholderString = placeholder
         context.coordinator.env = env
@@ -51,7 +74,7 @@ struct VariableTextField: NSViewRepresentable {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, NSTextFieldDelegate {
+    class Coordinator: NSObject, NSTextViewDelegate {
         var parent: VariableTextField
         var env: PigeonEnvironment?
         var popover: NSPopover?
@@ -60,21 +83,16 @@ struct VariableTextField: NSViewRepresentable {
             self.parent = parent
         }
         
-        func controlTextDidChange(_ obj: Notification) {
-            guard let textField = obj.object as? NSTextField else { return }
-            parent.text = textField.stringValue
-            applyHighlighting(to: textField)
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            parent.text = textView.string
+            applyHighlighting(to: textView)
         }
         
-        func applyHighlighting(to textField: NSTextField) {
-            let string = textField.stringValue
-            let baseFont = textField.font ?? NSFont.systemFont(ofSize: 13)
-            
-            // Get current selection (insertion point)
-            var selectedRange: NSRange? = nil
-            if let editor = textField.currentEditor() {
-                selectedRange = editor.selectedRange
-            }
+        func applyHighlighting(to textView: NSTextView) {
+            guard let textStorage = textView.textStorage else { return }
+            let string = textStorage.string
+            let baseFont = textView.font ?? NSFont.systemFont(ofSize: 13)
             
             let attributed = NSMutableAttributedString(string: string)
             attributed.addAttribute(.font, value: baseFont, range: NSRange(location: 0, length: string.utf16.count))
@@ -82,64 +100,115 @@ struct VariableTextField: NSViewRepresentable {
             
             VariableHighlighter.shared.highlight(in: attributed, font: baseFont)
             
-            // Only update if the attributed string is different to preserve undo stack and cursor
-            if textField.attributedStringValue != attributed {
-                textField.attributedStringValue = attributed
-                
-                // Restore selection IMMEDIATELY after setting value
-                if let range = selectedRange, let editor = textField.currentEditor() {
-                    editor.selectedRange = range
-                }
+            textStorage.beginEditing()
+            let fullRange = NSRange(location: 0, length: textStorage.length)
+            textStorage.setAttributes([:], range: fullRange)
+            attributed.enumerateAttributes(in: fullRange, options: []) { attrs, range, _ in
+                textStorage.addAttributes(attrs, range: range)
             }
+            textStorage.endEditing()
         }
         
-        // Link clicking in NSTextField is more complex, so we'll use a gesture recognizer if needed later.
-        // For now, let's focus on the typing and scrolling.
+        func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+            let linkString: String?
+            if let url = link as? URL {
+                linkString = url.absoluteString
+            } else if let str = link as? String {
+                linkString = str
+            } else {
+                linkString = nil
+            }
+            
+            if let str = linkString, str.hasPrefix("variable://") {
+                let variableName = String(str.dropFirst("variable://".count))
+                showVariablePopover(for: variableName, in: textView, at: charIndex)
+                return true
+            }
+            return false
+        }
+        
+        private func showVariablePopover(for variableName: String, in textView: NSTextView, at charIndex: Int) {
+            popover?.performClose(nil)
+            
+            let popoverView = VariablePopoverView(variableName: variableName, env: env) { [weak self] newValue in
+                self?.parent.onVariableUpdate?(variableName, newValue)
+            }
+            
+            let hostingController = NSHostingController(rootView: popoverView)
+            
+            let newPopover = NSPopover()
+            newPopover.contentViewController = hostingController
+            newPopover.behavior = .transient
+            newPopover.animates = true
+            
+            if let layoutManager = textView.layoutManager, let textContainer = textView.textContainer {
+                let glyphIndex = layoutManager.glyphIndexForCharacter(at: charIndex)
+                let rect = layoutManager.boundingRect(forGlyphRange: NSRange(location: glyphIndex, length: 1), in: textContainer)
+                
+                newPopover.show(relativeTo: rect, of: textView, preferredEdge: .maxY)
+            }
+            
+            self.popover = newPopover
+        }
     }
 }
 
-class CustomTextField: NSTextField {
+class VariableTextView: NSTextView {
+    var enforceSingleLine: Bool = false
     var onCommit: (() -> Void)? = nil
-    var onPaste: ((String) -> Bool)? = nil
-    
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == .keyDown && (event.keyCode == 36 || event.keyCode == 76) { // Return key
-            onCommit?()
-            return true
+    var placeholderString: String? {
+        didSet {
+            self.needsDisplay = true
         }
-        return super.performKeyEquivalent(with: event)
     }
     
     override var undoManager: UndoManager? {
         return super.undoManager ?? NSApplication.shared.keyWindow?.undoManager
     }
     
-    override func becomeFirstResponder() -> Bool {
-        let result = super.becomeFirstResponder()
-        if result {
-            // When becoming first responder, ensure we're using single line mode correctly
-            self.cell?.usesSingleLineMode = true
+    override func insertNewline(_ sender: Any?) {
+        if enforceSingleLine {
+            onCommit?()
+        } else {
+            super.insertNewline(sender)
         }
-        return result
     }
-}
+    
+    override func insertTab(_ sender: Any?) {
+        self.window?.selectNextKeyView(sender)
+    }
+    
+    override func insertBacktab(_ sender: Any?) {
+        self.window?.selectPreviousKeyView(sender)
+    }
+    
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        if string.isEmpty, let placeholder = placeholderString {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: font ?? NSFont.systemFont(ofSize: 13),
+                .foregroundColor: NSColor.placeholderTextColor
+            ]
+            let placeholderRect = NSRect(x: textContainerInset.width + 2, y: textContainerInset.height, width: bounds.width, height: bounds.height)
+            placeholder.draw(in: placeholderRect, withAttributes: attributes)
+        }
+    }
+    
+    // Support CMD+Return or just Return if needed
+    override func keyDown(with event: NSEvent) {
+        if enforceSingleLine && (event.keyCode == 36 || event.keyCode == 76) { // Return key
+            onCommit?()
+            return
+        }
+        super.keyDown(with: event)
+    }
 
-class CenteredTextFieldCell: NSTextFieldCell {
-    override func drawingRect(forBounds rect: NSRect) -> NSRect {
-        let rect = super.drawingRect(forBounds: rect)
-        let size = self.cellSize(forBounds: rect)
-        let delta = rect.height - size.height
-        if delta > 0 {
-            return NSRect(x: rect.origin.x, y: rect.origin.y + delta / 2, width: rect.width, height: size.height)
+    override func paste(_ sender: Any?) {
+        let pb = NSPasteboard.general
+        if let s = pb.string(forType: .string), let onPaste = (delegate as? VariableTextField.Coordinator)?.parent.onPaste, onPaste(s) {
+            return
         }
-        return rect
-    }
-    
-    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
-        super.select(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
-    }
-    
-    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: drawingRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+        super.paste(sender)
     }
 }

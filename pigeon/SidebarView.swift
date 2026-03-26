@@ -399,13 +399,14 @@ struct SidebarTree: View {
                             springLoadedIDs: $springLoadedIDs,
                             draggingOverID: $draggingOverID
                         )
-                        .padding(.leading, 12)
                     }
                 } label: {
                     sidebarRow(for: item)
                 }
+                .tag(item.id)
             } else {
                 sidebarRow(for: item)
+                    .tag(item.id)
             }
         }
     }
@@ -582,7 +583,6 @@ struct SidebarItemRow: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
-                .padding(.trailing, 4)
             }
         }
         .padding(.vertical, 3)
